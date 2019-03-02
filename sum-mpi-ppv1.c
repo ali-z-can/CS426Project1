@@ -25,6 +25,9 @@ void main(int argc,char **argv){
         }
         sz--;
         rewind(fp);
+
+
+
         if(sz % size == 0){
 
             int st = sz/size;
@@ -38,6 +41,8 @@ void main(int argc,char **argv){
                 for(forCounter2=0;forCounter2<st;forCounter2++){
                     fscanf(fp,"%d",&arrtosend[forCounter2]);
                 }
+                //send total size for checking purposes (#inputs < #processors)
+                MPI_Send ((void *)&sz,1,MPI_INT,(forCounter+1),0xACE5,MPI_COMM_WORLD );
                 //send array size
                 MPI_Send ((void *)&st,1,MPI_INT,(forCounter+1),0xACE5,MPI_COMM_WORLD );
                 //send actual array
@@ -69,15 +74,20 @@ void main(int argc,char **argv){
                     for (forCounter2 = 0;forCounter2<st+1;forCounter2++){
                         fscanf(fp,"%d",&arrtosend1[forCounter2]);
                     }
+                    //send total size for checking purposes (#inputs < #processors)
+                    MPI_Send ((void *)&sz,1,MPI_INT,(forCounter+1),0xACE5,MPI_COMM_WORLD );
                     //Send array size
                     MPI_Send ((void *)&st2,1,MPI_INT,(forCounter+1),0xACE5,MPI_COMM_WORLD);
                     //send actual array
                     MPI_Send((void *)&arrtosend1,(st+1),MPI_INT,(forCounter+1),0xACE5,MPI_COMM_WORLD );
+                    remc++;
                 }
                 else{
                     for(forCounter2=0;forCounter2<st;forCounter2++){
                         fscanf(fp,"%d",&arrtosend2[forCounter2]);
                     }
+                    //send total size for checking purposes (#inputs < #processors)
+                    MPI_Send ((void *)&sz,1,MPI_INT,(forCounter+1),0xACE5,MPI_COMM_WORLD );
                     //send array size
                     MPI_Send ((void *)&st,1,MPI_INT,(forCounter+1),0xACE5,MPI_COMM_WORLD );
                     //send actual array
@@ -91,12 +101,17 @@ void main(int argc,char **argv){
 
 
         }
-        fprintf(stderr,"total = %d\n",total);
+
         int arriving,forCounter;
 
         for(forCounter=0;forCounter<size-1;forCounter++){
             MPI_Recv((void*)&arriving,1,MPI_INT,(forCounter+1),0xACE5,MPI_COMM_WORLD,&s);
             total += arriving;
+        }
+        if(size > sz){
+            //todo -> find a better way if possible
+            total -= arriving*(size-sz);
+
         }
         //done its own part
         fclose(fp);
@@ -104,21 +119,29 @@ void main(int argc,char **argv){
 
     }
     else{
-        int size;
+        int size,sz;
+        MPI_Recv((void *)&sz,1,MPI_INT,0,0xACE5,MPI_COMM_WORLD, &s);
+
         MPI_Recv((void *)&size,1,MPI_INT,0,0xACE5,MPI_COMM_WORLD, &s);
         int myarr[size];
         MPI_Recv((void *)&myarr,size,MPI_INT,0,0xACE5,MPI_COMM_WORLD,&s);
         int mytotal;
         mytotal=0;
         int forCounter;
-        for(forCounter=0;forCounter<size;forCounter++){
-            mytotal+=myarr[forCounter];
+        if(sz <= rank){
+            //donothing
+        }
+        else {
+            for (forCounter = 0; forCounter < size; forCounter++) {
+                fprintf(stderr,"rank: %d adding %d size: %d\n",rank,myarr[forCounter],size);
+                mytotal += myarr[forCounter];
+            }
         }
         MPI_Send((void *)&mytotal,1,MPI_INT,0,0xACE5,MPI_COMM_WORLD);
-        fprintf(stderr,"wow wtf im done sum = %d\n",mytotal);
+
 
     }
-    printf("im fucking working bitcheeez%d/%d\n",rank+1,size);
+
     MPI_Finalize();
 
 }
