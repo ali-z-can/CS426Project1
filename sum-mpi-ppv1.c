@@ -115,7 +115,7 @@ void main(int argc,char **argv){
         }
         //done its own part
         fclose(fp);
-        fprintf(stderr,"total = %d\n",total);
+        fprintf(stderr,"%d\n",total);
 
     }
     else{
@@ -133,7 +133,7 @@ void main(int argc,char **argv){
         }
         else {
             for (forCounter = 0; forCounter < size; forCounter++) {
-                fprintf(stderr,"rank: %d adding %d size: %d\n",rank,myarr[forCounter],size);
+                //fprintf(stderr,"rank: %d adding %d size: %d\n",rank,myarr[forCounter],size);
                 mytotal += myarr[forCounter];
             }
         }
